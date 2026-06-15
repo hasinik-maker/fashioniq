@@ -1,2 +1,2 @@
-# fashioniq
+# Trendora
 fashion trend intelligence app
