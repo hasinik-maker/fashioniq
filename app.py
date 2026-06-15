@@ -1,6 +1,5 @@
 import streamlit as st
 import plotly.graph_objects as go
-import plotly.express as px
 import pandas as pd
 import numpy as np
 import sys
@@ -13,7 +12,7 @@ from data.mock_data import (
 )
 
 st.set_page_config(
-    page_title="FashionIQ — Trend Intelligence",
+    page_title="Trendora — Trend Intelligence",
     page_icon="◆",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -22,55 +21,50 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600&family=Space+Mono&display=swap');
-:root {
-    --crimson: #C41E3A;
-    --ink: #0A0A0A;
-    --paper: #F7F5F0;
-    --warm-grey: #8C8C8C;
-    --rule: #D4D0C8;
-    --gold: #B8964A;
-}
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #0A0A0A; }
+* { color: #000000 !important; }
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #000000 !important; }
+p, span, div, h1, h2, h3, label, li { color: #000000 !important; }
 .stApp { background: #F7F5F0; }
 [data-testid="stSidebar"] { background: #0A0A0A !important; border-right: 1px solid #222; }
 [data-testid="stSidebar"] * { color: #F7F5F0 !important; }
 header[data-testid="stHeader"] { display: none; }
 .metric-card { background: #0A0A0A; color: #F7F5F0; padding: 24px 20px; border-radius: 2px; }
-.metric-card .val { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; color: #F7F5F0; line-height: 1; margin-bottom: 4px; }
-.metric-card .lbl { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8C8C8C; }
-.metric-card .delta { font-size: 0.8rem; color: #C41E3A; margin-top: 6px; font-weight: 600; }
+.metric-card .val { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; color: #F7F5F0 !important; line-height: 1; margin-bottom: 4px; }
+.metric-card .lbl { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8C8C8C !important; }
+.metric-card .delta { font-size: 0.8rem; color: #C41E3A !important; margin-top: 6px; font-weight: 600; }
 .trend-card { background: white; border-radius: 2px; padding: 20px; border-left: 4px solid #C41E3A; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 .trend-card.medium { border-left-color: #B8964A; }
 .trend-card.low { border-left-color: #8C8C8C; }
 .trend-card.dead { border-left-color: #D4D0C8; }
-.trend-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
-.trend-meta { font-size: 0.75rem; color: #8C8C8C; margin-bottom: 8px; }
-.trend-desc { font-size: 0.85rem; color: #333; line-height: 1.5; }
+.trend-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; color: #000000 !important; }
+.trend-meta { font-size: 0.75rem; color: #000000 !important; margin-bottom: 8px; }
+.trend-desc { font-size: 0.85rem; color: #000000 !important; line-height: 1.5; }
 .urgency-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
-.badge-high { background: #FFF0F0; color: #C41E3A; }
-.badge-medium { background: #FFF8EC; color: #B8964A; }
-.badge-low { background: #F5F5F5; color: #555; }
-.badge-dead { background: #F0F0F0; color: #888; }
+.badge-high { background: #FFF0F0; color: #C41E3A !important; }
+.badge-medium { background: #FFF8EC; color: #B8964A !important; }
+.badge-low { background: #F5F5F5; color: #000000 !important; }
+.badge-dead { background: #F0F0F0; color: #000000 !important; }
 .heat-bar-wrap { margin: 10px 0 4px; }
 .heat-bar-bg { background: #EEE; border-radius: 2px; height: 6px; width: 100%; }
 .heat-bar-fill { height: 6px; border-radius: 2px; background: linear-gradient(90deg, #C41E3A, #FF6B6B); }
-.section-eyebrow { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #C41E3A; font-weight: 600; margin-bottom: 4px; }
-.section-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: #0A0A0A; margin-bottom: 24px; border-bottom: 2px solid #0A0A0A; padding-bottom: 12px; }
-.wh-card { background: white; border-radius: 2px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); border-top: 3px solid #0A0A0A; }
-.wh-name { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; }
-.wh-city { font-size: 0.8rem; color: #8C8C8C; letter-spacing: 0.05em; }
-.wh-tag { display: inline-block; padding: 2px 8px; background: #0A0A0A; color: #F7F5F0; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px; margin-right: 4px; margin-top: 4px; }
+.section-eyebrow { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #C41E3A !important; font-weight: 600; margin-bottom: 4px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: #000000 !important; margin-bottom: 24px; border-bottom: 2px solid #000000; padding-bottom: 12px; }
+.wh-card { background: white; border-radius: 2px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); border-top: 3px solid #000000; }
+.wh-name { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: #000000 !important; }
+.wh-city { font-size: 0.8rem; color: #000000 !important; letter-spacing: 0.05em; }
+.wh-tag { display: inline-block; padding: 2px 8px; background: #0A0A0A; color: #F7F5F0 !important; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px; margin-right: 4px; margin-top: 4px; }
 .page-masthead { background: #0A0A0A; color: #F7F5F0; padding: 28px 32px 24px; margin: -16px -16px 32px; border-bottom: 3px solid #C41E3A; }
-.masthead-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
-.masthead-sub { font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: #C41E3A; margin-top: 6px; }
-.masthead-date { font-size: 0.7rem; color: #8C8C8C; letter-spacing: 0.1em; margin-top: 4px; }
+.masthead-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1; color: #F7F5F0 !important; }
+.masthead-sub { font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: #C41E3A !important; margin-top: 6px; }
+.masthead-date { font-size: 0.7rem; color: #8C8C8C !important; letter-spacing: 0.1em; margin-top: 4px; }
 .stButton > button { background: #0A0A0A !important; color: #F7F5F0 !important; border: none !important; border-radius: 2px !important; font-size: 0.75rem !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; font-weight: 600 !important; padding: 10px 24px !important; }
 .stButton > button:hover { background: #C41E3A !important; }
 .alert-box { padding: 12px 16px; border-radius: 2px; margin: 8px 0; font-size: 0.85rem; }
-.alert-red { background: #FFF0F2; border-left: 3px solid #C41E3A; color: #7A0020; }
-.alert-gold { background: #FFF8EC; border-left: 3px solid #B8964A; color: #7A5A00; }
-.alert-green { background: #F0FFF4; border-left: 3px solid #2E7D32; color: #1B4F1E; }
-.ai-msg { background: #0A0A0A; color: #F7F5F0; border-radius: 2px; padding: 16px 20px; font-size: 0.88rem; line-height: 1.6; margin-top: 12px; border-left: 3px solid #C41E3A; }
+.alert-red { background: #FFF0F2; border-left: 3px solid #C41E3A; color: #000000 !important; }
+.alert-gold { background: #FFF8EC; border-left: 3px solid #B8964A; color: #000000 !important; }
+.alert-green { background: #F0FFF4; border-left: 3px solid #2E7D32; color: #000000 !important; }
+.ai-msg { background: #0A0A0A; color: #F7F5F0 !important; border-radius: 2px; padding: 16px 20px; font-size: 0.88rem; line-height: 1.6; margin-top: 12px; border-left: 3px solid #C41E3A; }
+.ai-msg * { color: #F7F5F0 !important; }
 hr { border: none; border-top: 1px solid #D4D0C8; margin: 24px 0; }
 </style>
 """, unsafe_allow_html=True)
@@ -78,10 +72,10 @@ hr { border: none; border-top: 1px solid #D4D0C8; margin: 24px 0; }
 with st.sidebar:
     st.markdown("""
     <div style='padding: 8px 0 24px;'>
-        <div style='font-family: "Playfair Display", serif; font-size: 1.6rem; font-weight: 900; color: #F7F5F0;'>
-            Fashion<span style='color:#C41E3A;'>IQ</span>
+        <div style='font-family: "Playfair Display", serif; font-size: 1.6rem; font-weight: 900; color: #F7F5F0 !important;'>
+            Trend<span style='color:#C41E3A;'>ora</span>
         </div>
-        <div style='font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-top: 2px;'>Trend Intelligence Platform</div>
+        <div style='font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555 !important; margin-top: 2px;'>Trend Intelligence Platform</div>
         <hr style='border-color: #222; margin: 16px 0;'>
     </div>
     """, unsafe_allow_html=True)
@@ -97,8 +91,8 @@ with st.sidebar:
 
     st.markdown("<hr style='border-color:#222;'>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='font-size:0.65rem; color:#555; letter-spacing:0.1em; text-transform:uppercase;'>
-        Live · Hyderabad Market<br><span style='color:#C41E3A;'>● Active</span>
+    <div style='font-size:0.65rem; color:#555 !important; letter-spacing:0.1em; text-transform:uppercase;'>
+        Live · Hyderabad Market<br><span style='color:#C41E3A !important;'>● Active</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -150,7 +144,7 @@ if "Trend Intelligence" in page:
         else:
             card_cls = "dead"; badge_cls = "badge-dead"
 
-        tags_html = "".join([f"<span style='background:#f0f0f0;padding:2px 8px;border-radius:20px;font-size:0.65rem;margin-right:4px;color:#555;'>{t}</span>" for t in trend["tags"]])
+        tags_html = "".join([f"<span style='background:#f0f0f0;padding:2px 8px;border-radius:20px;font-size:0.65rem;margin-right:4px;color:#000000;'>{t}</span>" for t in trend["tags"]])
 
         with col:
             st.markdown(f"""
@@ -160,17 +154,17 @@ if "Trend Intelligence" in page:
                         <div class='trend-name'>{trend['name']}</div>
                         <div class='trend-meta'>{trend['category']} · {trend['city']} · {trend['direction']}</div>
                     </div>
-                    <div style='font-size:1.6rem;font-weight:700;color:#0A0A0A;'>{trend['heat']}</div>
+                    <div style='font-size:1.6rem;font-weight:700;color:#000000;'>{trend['heat']}</div>
                 </div>
                 <span class='urgency-badge {badge_cls}'>{trend['urgency'].replace('_',' ')}</span>
                 <div style='color:#C41E3A;font-weight:700;font-size:0.85rem;margin-bottom:8px;'>{trend['change']} demand</div>
                 <div class='trend-desc'>{trend['description']}</div>
                 <div class='heat-bar-wrap'>
-                    <div style='font-size:0.65rem;color:#8C8C8C;margin-bottom:4px;'>TREND HEAT</div>
+                    <div style='font-size:0.65rem;color:#000000;margin-bottom:4px;'>TREND HEAT</div>
                     <div class='heat-bar-bg'><div class='heat-bar-fill' style='width:{trend["heat"]}%;'></div></div>
                 </div>
                 <div style='margin-top:10px;'>{tags_html}</div>
-                <div style='font-size:0.72rem;color:#8C8C8C;margin-top:10px;'>⏱ Peak in ~{trend['peak_weeks']} weeks</div>
+                <div style='font-size:0.72rem;color:#000000;margin-top:10px;'>⏱ Peak in ~{trend['peak_weeks']} weeks</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -180,8 +174,11 @@ if "Trend Intelligence" in page:
     names = [t["name"] for t in TRENDS]
     heats = [t["heat"] for t in TRENDS]
     colors = ["#C41E3A" if h > 80 else "#B8964A" if h > 60 else "#8C8C8C" for h in heats]
-    fig = go.Figure(go.Bar(x=heats, y=names, orientation='h', marker_color=colors, text=[f"{h}" for h in heats], textposition='outside'))
-    fig.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter', size=12),
+    fig = go.Figure(go.Bar(x=heats, y=names, orientation='h', marker_color=colors,
+        text=[f"{h}" for h in heats], textposition='outside',
+        textfont=dict(color='#000000')))
+    fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(family='Inter', size=12, color='#000000'),
         xaxis=dict(showgrid=False, showticklabels=False, range=[0, 110]),
         yaxis=dict(showgrid=False), margin=dict(l=10, r=40, t=10, b=10), height=340)
     st.plotly_chart(fig, use_container_width=True)
@@ -218,10 +215,13 @@ elif "Demand Forecast" in page:
         palette = ["#C41E3A", "#0A0A0A", "#B8964A", "#555", "#2E7D32"]
         for i, prod in enumerate(product_sel):
             fig2.add_trace(go.Scatter(x=data["weeks"], y=data[prod], name=prod,
-                mode='lines+markers', line=dict(color=palette[i % len(palette)], width=2.5), marker=dict(size=6)))
-        fig2.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter', size=12),
+                mode='lines+markers', line=dict(color=palette[i % len(palette)], width=2.5),
+                marker=dict(size=6)))
+        fig2.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+            font=dict(family='Inter', size=12, color='#000000'),
             legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
-            xaxis=dict(showgrid=False, title="Week"), yaxis=dict(showgrid=True, gridcolor='#EEE', title="Units"),
+            xaxis=dict(showgrid=False, title="Week"),
+            yaxis=dict(showgrid=True, gridcolor='#EEE', title="Units"),
             margin=dict(l=10, r=10, t=30, b=10), height=380)
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -242,8 +242,10 @@ elif "Demand Forecast" in page:
     fig3 = go.Figure()
     fig3.add_trace(go.Scatter(x=hist["date"], y=hist["revenue"], fill='tozeroy',
         fillcolor='rgba(196,30,58,0.08)', line=dict(color='#C41E3A', width=2), name="Daily Revenue"))
-    fig3.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter', size=12),
-        xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#EEE', tickprefix='₹'),
+    fig3.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(family='Inter', size=12, color='#000000'),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor='#EEE', tickprefix='₹'),
         margin=dict(l=10, r=10, t=10, b=10), height=280)
     st.plotly_chart(fig3, use_container_width=True)
 
@@ -305,7 +307,7 @@ elif "Stock Manager" in page:
             c4.metric("Velocity", item['velocity'])
             c5.metric("Margin", f"{margin}%")
             st.markdown(f"""
-            <div style='margin:12px 0 4px;font-size:0.7rem;color:#8C8C8C;text-transform:uppercase;'>Stock Level</div>
+            <div style='margin:12px 0 4px;font-size:0.7rem;color:#000000;text-transform:uppercase;'>Stock Level</div>
             <div style='background:#EEE;border-radius:2px;height:8px;width:100%;'>
                 <div style='width:{pct}%;height:8px;border-radius:2px;background:{bar_color};'></div>
             </div>""", unsafe_allow_html=True)
@@ -325,7 +327,8 @@ elif "Stock Manager" in page:
         marker_color=['#C41E3A' if q < r else '#0A0A0A' for q, r in zip(qty, reorder_pts)]))
     fig4.add_trace(go.Scatter(name='Reorder Point', x=names, y=reorder_pts,
         mode='lines+markers', line=dict(color='#B8964A', dash='dash', width=2), marker=dict(size=8)))
-    fig4.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter', size=12),
+    fig4.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(family='Inter', size=12, color='#000000'),
         legend=dict(orientation='h', yanchor='bottom', y=1.02),
         xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#EEE', title="Units"),
         margin=dict(l=10, r=10, t=30, b=10), height=320)
@@ -365,16 +368,16 @@ elif "Pricing Studio" in page:
             your_pct = int((p["your_price"] - p["low"]) / range_span * 100) if range_span else 50
             sugg_pct = int((p["suggested"] - p["low"]) / range_span * 100) if range_span else 50
             st.markdown(f"""
-            <div style='margin:12px 0 4px;font-size:0.7rem;color:#8C8C8C;text-transform:uppercase;'>Market Price Range</div>
+            <div style='margin:12px 0 4px;font-size:0.7rem;color:#000000;text-transform:uppercase;'>Market Price Range</div>
             <div style='position:relative;background:#EEE;border-radius:2px;height:10px;width:100%;'>
-                <div style='position:absolute;left:{your_pct}%;top:-3px;width:4px;height:16px;background:#0A0A0A;border-radius:2px;'></div>
+                <div style='position:absolute;left:{your_pct}%;top:-3px;width:4px;height:16px;background:#000000;border-radius:2px;'></div>
                 <div style='position:absolute;left:{sugg_pct}%;top:-3px;width:4px;height:16px;background:#C41E3A;border-radius:2px;'></div>
             </div>
-            <div style='display:flex;justify-content:space-between;font-size:0.7rem;color:#8C8C8C;margin-top:6px;'>
-                <span>Low ₹{p['low']}</span><span style='color:#0A0A0A;'>■ Your price</span>
+            <div style='display:flex;justify-content:space-between;font-size:0.7rem;color:#000000;margin-top:6px;'>
+                <span>Low ₹{p['low']}</span><span style='color:#000000;'>■ Your price</span>
                 <span style='color:#C41E3A;'>■ Suggested</span><span>High ₹{p['high']}</span>
             </div>
-            <div style='margin-top:10px;padding:10px 14px;background:#F7F5F0;border-left:3px solid {opp_color};font-size:0.82rem;color:{opp_color};font-weight:600;'>
+            <div style='margin-top:10px;padding:10px 14px;background:#F7F5F0;border-left:3px solid {opp_color};font-size:0.82rem;color:#000000;font-weight:600;'>
                 {opp}
             </div>""", unsafe_allow_html=True)
 
@@ -385,11 +388,14 @@ elif "Pricing Studio" in page:
     mcolors = ["#2E7D32" if m > 60 else "#B8964A" if m > 40 else "#C41E3A" for m in margins]
     fig5 = go.Figure()
     fig5.add_trace(go.Bar(x=products, y=margins, marker_color=mcolors,
-        text=[f"{m}%" for m in margins], textposition='outside'))
+        text=[f"{m}%" for m in margins], textposition='outside',
+        textfont=dict(color='#000000')))
     fig5.add_hline(y=50, line_dash="dash", line_color="#B8964A", annotation_text="Min target 50%")
-    fig5.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter', size=11),
+    fig5.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(family='Inter', size=11, color='#000000'),
         yaxis=dict(showgrid=True, gridcolor='#EEE', title="Gross Margin %", range=[0, 90]),
-        xaxis=dict(showgrid=False, tickangle=-20), margin=dict(l=10, r=10, t=20, b=80), height=340)
+        xaxis=dict(showgrid=False, tickangle=-20),
+        margin=dict(l=10, r=10, t=20, b=80), height=340)
     st.plotly_chart(fig5, use_container_width=True)
 
 # ── PAGE 5: WHOLESALER MARKETPLACE ───────────────────────────────────────────
@@ -429,8 +435,8 @@ elif "Wholesaler Market" in page:
                 </div>
                 <div style='text-align:right;'>
                     <div style='color:#B8964A;font-size:1.1rem;'>{stars}</div>
-                    <div style='font-size:0.75rem;color:#555;'>{wh['rating']}/5.0 ✅ Verified</div>
-                    <div style='font-size:0.72rem;color:#8C8C8C;margin-top:4px;'>Min order: ₹{wh['min_order_value']//1000}K</div>
+                    <div style='font-size:0.75rem;color:#000000;'>{wh['rating']}/5.0 ✅ Verified</div>
+                    <div style='font-size:0.72rem;color:#000000;margin-top:4px;'>Min order: ₹{wh['min_order_value']//1000}K</div>
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
@@ -446,7 +452,7 @@ elif "Wholesaler Market" in page:
                 c4.metric("Lead Time", f"{prod['lead_days']} days")
                 c5.metric("Colors", f"{prod['colors']} options")
                 total_cost = prod["price_per_unit"] * prod["moq"]
-                st.markdown(f"<div style='background:#F7F5F0;padding:10px 16px;border-radius:2px;font-size:0.82rem;margin-top:8px;'>Minimum Order: {prod['moq']} units × ₹{prod['price_per_unit']} = <strong>₹{total_cost:,}</strong> · Sizes: {prod['sizes']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background:#F7F5F0;padding:10px 16px;border-radius:2px;font-size:0.82rem;color:#000000;margin-top:8px;'>Minimum Order: {prod['moq']} units × ₹{prod['price_per_unit']} = <strong>₹{total_cost:,}</strong> · Sizes: {prod['sizes']}</div>", unsafe_allow_html=True)
                 col_btn1, col_btn2, _ = st.columns([1, 1, 4])
                 with col_btn1:
                     if st.button(f"📩 Enquire", key=f"enq_{wh['id']}_{prod['name'][:8]}"):
@@ -461,9 +467,11 @@ elif "Wholesaler Market" in page:
     wh_ratings = [w["rating"] for w in WHOLESALERS]
     fig6 = go.Figure()
     fig6.add_trace(go.Bar(x=wh_names, y=wh_ratings, marker_color='#0A0A0A',
-        text=[f"{r}" for r in wh_ratings], textposition='outside'))
+        text=[f"{r}" for r in wh_ratings], textposition='outside',
+        textfont=dict(color='#000000')))
     fig6.add_hline(y=4.5, line_dash="dot", line_color="#C41E3A", annotation_text="Top tier")
-    fig6.update_layout(plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Inter', size=12),
+    fig6.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+        font=dict(family='Inter', size=12, color='#000000'),
         yaxis=dict(range=[0, 5.5], showgrid=True, gridcolor='#EEE', title="Rating"),
         xaxis=dict(showgrid=False), margin=dict(l=10, r=10, t=20, b=10), height=280)
     st.plotly_chart(fig6, use_container_width=True)
@@ -479,13 +487,13 @@ elif "AI Advisor" in page:
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style='background:white;border-radius:2px;padding:20px 24px;margin-bottom:20px;border-left:4px solid #0A0A0A;'>
-        <div style='font-family:"Playfair Display",serif;font-size:1rem;font-weight:700;margin-bottom:6px;'>Ask me anything about your fashion business</div>
-        <div style='font-size:0.82rem;color:#555;'>Get AI-powered advice on trends, stock, pricing, and suppliers.</div>
+    <div style='background:white;border-radius:2px;padding:20px 24px;margin-bottom:20px;border-left:4px solid #000000;'>
+        <div style='font-family:"Playfair Display",serif;font-size:1rem;font-weight:700;margin-bottom:6px;color:#000000;'>Ask me anything about your fashion business</div>
+        <div style='font-size:0.82rem;color:#000000;'>Get AI-powered advice on trends, stock, pricing, and suppliers.</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div style='font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:#8C8C8C;margin-bottom:10px;'>Quick Questions</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:#000000;margin-bottom:10px;'>Quick Questions</div>", unsafe_allow_html=True)
     quick_qs = ["What should I reorder this week?", "Which dead stock should I clear?", "How can I improve my margins?", "Which wholesaler for cargo pants?", "What trends to stock next month?"]
     cols = st.columns(3)
     for i, q in enumerate(quick_qs[:3]):
@@ -508,17 +516,17 @@ elif "AI Advisor" in page:
             with st.spinner("Analysing your business data…"):
                 lower_q = user_input.lower()
                 if "reorder" in lower_q or "buy" in lower_q or "stock" in lower_q:
-                    advice = "🔴 **Priority reorders this week:** Baggy Cargo Pants (only 4 days of stock — order 90 units from Rajesh Textiles at ₹320/unit = ₹28,800), Crochet Mini Skirts (3 days left — order 75 units from Femina Fashion House), and Printed Maxi Dresses (order 120 units immediately). These are your highest-velocity items with peak demand in 5–7 weeks."
+                    advice = "🔴 Priority reorders this week: Baggy Cargo Pants (only 4 days of stock — order 90 units from Rajesh Textiles at ₹320/unit = ₹28,800), Crochet Mini Skirts (3 days left — order 75 units from Femina Fashion House), and Printed Maxi Dresses (order 120 units immediately). These are your highest-velocity items with peak demand in 5–7 weeks."
                 elif "dead" in lower_q or "clear" in lower_q or "blazer" in lower_q:
-                    advice = "📦 **Dead stock action plan:** Your 78 Straight Blazers are your biggest risk — ₹69,420 tied up at cost. Run a 30% off flash sale immediately (₹1,049 from ₹1,499). Push on Instagram with a '72-hour offer'. At 10 units/week you'll clear in ~8 weeks and recover ₹81,822. Don't reorder under any circumstances."
+                    advice = "📦 Dead stock action plan: Your 78 Straight Blazers are your biggest risk — ₹69,420 tied up at cost. Run a 30% off flash sale immediately (₹1,049 from ₹1,499). Push on Instagram with a 72-hour offer. At 10 units/week you will clear in 8 weeks and recover ₹81,822. Do not reorder under any circumstances."
                 elif "margin" in lower_q or "profit" in lower_q or "price" in lower_q:
-                    advice = "💹 **Margin improvement:** Price up Baggy Cargo Pants to ₹1,399, Crochet Skirts to ₹899, and Maxi Dresses to ₹1,649 — all below market average right now. Combined on expected monthly volume, that's ~₹18,000 additional margin at zero extra cost."
+                    advice = "💹 Margin improvement: Price up Baggy Cargo Pants to ₹1,399, Crochet Skirts to ₹899, and Maxi Dresses to ₹1,649 — all below market average right now. Combined on expected monthly volume, that is approximately ₹18,000 additional margin at zero extra cost."
                 elif "wholesaler" in lower_q or "supplier" in lower_q or "cargo" in lower_q:
-                    advice = "🏭 **Best for cargo pants:** Rajesh Textiles & Exports in Surat — rated 4.8/5, 14 years experience, MOQ 50 units at ₹320/unit. Lead time is 7 days which fits your 4-day stock emergency. Order immediately and request express dispatch."
+                    advice = "🏭 Best for cargo pants: Rajesh Textiles and Exports in Surat — rated 4.8/5, 14 years experience, MOQ 50 units at ₹320/unit. Lead time is 7 days which fits your 4-day stock emergency. Order immediately and request express dispatch."
                 elif "trend" in lower_q or "next month" in lower_q:
-                    advice = "📈 **Next month priorities:** Double down on Crochet Mini Skirts (peaking in 3 weeks, 71% margin), Printed Maxi Dresses (viral, +29% demand), and start stocking Ethnic Co-ord Sets ahead of the festive season. Avoid restocking Blazers — that category is cooling citywide."
+                    advice = "📈 Next month priorities: Double down on Crochet Mini Skirts (peaking in 3 weeks, 71% margin), Printed Maxi Dresses (viral, +29% demand), and start stocking Ethnic Co-ord Sets ahead of the festive season. Avoid restocking Blazers — that category is cooling citywide."
                 else:
-                    advice = "📊 **Strategic advice:** Your immediate priority is restocking the 4 fast-moving items before they stock out. Baggy Cargo Pants and Maxi Dresses are in viral territory — every day out of stock is lost revenue. Simultaneously, start clearing your Blazers with a discount campaign. Your margin profile is strong at 64% on trending items."
+                    advice = "📊 Strategic advice: Your immediate priority is restocking the 4 fast-moving items before they stock out. Baggy Cargo Pants and Maxi Dresses are in viral territory — every day out of stock is lost revenue. Simultaneously, start clearing your Blazers with a discount campaign. Your margin profile is strong at 64% on trending items."
                 st.markdown(f"<div class='ai-msg'>✦ {advice}</div>", unsafe_allow_html=True)
 
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -527,14 +535,14 @@ elif "AI Advisor" in page:
         ("🔴 URGENT", "#C41E3A", "Stock out risk in 4 days", "Baggy Cargo Pants, Crochet Mini Skirts, and Maxi Dresses will be out of stock before weekend. Contact Rajesh Textiles and Femina today."),
         ("💰 OPPORTUNITY", "#2E7D32", "₹18K margin on the table", "Raising prices on 5 products to market average adds ₹18,000/month at current volume. No extra procurement needed."),
         ("📦 ACTION", "#B8964A", "₹70K in dead stock", "78 blazers sitting unsold for 90+ days. A 30% clearance campaign can recover ₹81K and free up shelf space for trending items."),
-        ("📈 TREND", "#0A0A0A", "Crochet season is now", "Crochet Mini Skirts peaking in 3 weeks. You have only 6 units. This is your highest-margin item at 71% — don't miss this window."),
+        ("📈 TREND", "#000000", "Crochet season is now", "Crochet Mini Skirts peaking in 3 weeks. You have only 6 units. This is your highest-margin item at 71% — do not miss this window."),
     ]
     for label, color, title, body in digests:
         st.markdown(f"""
         <div style='background:white;border-radius:2px;padding:16px 20px;margin-bottom:12px;border-left:4px solid {color};'>
             <div style='font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:{color};font-weight:700;margin-bottom:4px;'>{label}</div>
-            <div style='font-family:"Playfair Display",serif;font-size:1rem;font-weight:700;margin-bottom:6px;'>{title}</div>
-            <div style='font-size:0.83rem;color:#444;line-height:1.5;'>{body}</div>
+            <div style='font-family:"Playfair Display",serif;font-size:1rem;font-weight:700;margin-bottom:6px;color:#000000;'>{title}</div>
+            <div style='font-size:0.83rem;color:#000000;line-height:1.5;'>{body}</div>
         </div>""", unsafe_allow_html=True)
 
-st.markdown("<hr><div style='text-align:center;padding:16px 0;font-size:0.65rem;color:#8C8C8C;letter-spacing:0.15em;text-transform:uppercase;'>FashionIQ · Trend Intelligence Platform · Hyderabad</div>", unsafe_allow_html=True)
+st.markdown("<hr><div style='text-align:center;padding:16px 0;font-size:0.65rem;color:#000000;letter-spacing:0.15em;text-transform:uppercase;'>Trendora · Trend Intelligence Platform · Hyderabad</div>", unsafe_allow_html=True)
